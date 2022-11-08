@@ -1,0 +1,830 @@
+---
+title: "Data visualization in R"
+output: 
+  learnr::tutorial:
+    progressive: true   
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(viridis)
+library(ggrepel)
+library(scales)
+library(lubridate)
+
+vac <- read_csv("https://www.dropbox.com/s/3c7kuqja1pv76r8/country_vaccinations.csv?dl=1")
+
+vac_top <- vac %>%
+    group_by(country) %>%
+    filter(date == max(date)) %>%
+    ungroup() %>%
+    arrange(desc(total_vaccinations_per_hundred)) %>%
+    slice(1:10)
+
+countries <- c("Israel", "Switzerland", "Norway", "Denmark", "Belgium")
+vac_subset <- vac %>%
+    filter(country %in% countries)
+
+vac_subset_last <- vac_subset %>%
+    group_by(country) %>%
+    filter(min_rank(desc(date)) == 1)
+
+shapes <- 21:25
+names(shapes) <- countries
+```
+
+# A grammar for graphics
+
+## Welcome!
+
+### Today's programme
+
+We will explore how to build informative and beautiful visualizations using the [ggpplot2](https://ggplot2.tidyverse.org/index.html) package, part of the [tidyverse](https://www.tidyverse.org/) suite. 
+
+In the interactive tutorial part, we will cover the following topics
+
+* ggplot2 basics
+* Aesthetics
+* Geometric shapes
+* Facets
+* Scales
+* Annotations
+* Themes
+
+Throughout we will progressively build up an example visualization of COVID19 vaccination progress for selected countries:
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+Following the interactive tutorial, there will be individual group exercises, where you will apply the learned techniques to build visualizations exploring different aspects of the example dataset.
+
+
+**Some useful resources**
+
+[ggplot2 cheat sheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf)  
+R for Data Science, chapter [visualization](https://r4ds.had.co.nz/data-visualisation.html)  
+[Fundamentals of Data Visualization](https://clauswilke.com/dataviz/)  
+
+### Interactive tutorial format
+This is what a code exercise block looks like
+
+```{r intro, exercise = TRUE}
+hist(rnorm(1000))
+```
+
+In tutorial sections, example code is provided by clicking the 'Solution' button
+```{r intro1, exercise=TRUE}
+hist(rnorm(1000))
+```
+
+```{r intro1-solution}
+hist(rnorm(1000), breaks=100)
+```
+
+In the exercise sections, hints can be progressively revealed by clicking the 'Hints' button
+
+```{r intro2, exercise = TRUE}
+hist(rnorm(1000))
+```
+
+```{r intro2-hint}
+hist(rnorm(1000), breaks=...)
+```
+
+```{r intro2-solution}
+hist(rnorm(1000), breaks=100)
+```
+## Basics
+
+### Set up
+
+pre-loading some necessary libraries
+
+```{r, eval=FALSE}
+library(tidyverse)
+library(viridis)
+library(ggrepel)
+library(scales)
+library(lubridate)
+```
+
+we'll use a [COVID19 vaccinations progress](https://www.kaggle.com/gpreda/covid-world-vaccination-progress) dataset for this tutorial
+
+
+```{r, eval=FALSE}
+vac <- read_csv("https://www.dropbox.com/s/3c7kuqja1pv76r8/country_vaccinations.csv?dl=1")
+
+countries <- c("Israel", "Switzerland", "Norway", "Denmark", "Belgium")
+vac_subset <- vac %>%
+    filter(country %in% countries)
+```
+
+### Let's explore the data
+```{r explore-data, exercise = TRUE}
+vac
+```
+
+```{r explore-data-solution}
+vac
+vac %>%
+    head()
+vac %>%
+    colnames()
+```
+
+### ggplot2 syntax
+the most basic ggplot2 visualizations are built using the following minimal syntax:
+
+```{r, eval = FALSE}
+ggplot(data=<DATA>) + 
+  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
+```
+
+### Simple plot using 2 variables
+```{r coord1, exercise = TRUE}
+ggplot()
+```
+```{r coord1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations))
+```
+
+### Modifying coordinate systems
+```{r coord2, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations))
+```
+```{r coord2-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations))
+
+### explicit coordinate system
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) + 
+    coord_cartesian()
+
+### zoom in
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) + 
+    coord_cartesian(ylim = c(0, 1e6))
+
+### other coordinate system
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) + 
+    coord_polar()
+```
+
+### Short exercise 1
+
+Plot the rate of people fully vaccinated (variable 'people_fully_vaccinated_per_hundred') against rate of people having received at least one vaccine dose (variable 'people_vaccinated_per_hundred'). 
+```{r coord-ex1, exercise = TRUE}
+vac_subset
+```
+```{r coord-ex1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred))
+```
+
+
+## Aesthetics
+
+### Mapping aesthetics to variables
+```{r aes1, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country)) 
+```
+```{r aes1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country)) 
+
+### map colour to daily vaccinations
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) 
+
+### map size and transparency to daily vaccinations
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations,  size = daily_vaccinations_raw, alpha = daily_vaccinations_raw))
+```
+
+### Mapping versus setting an aesthaetic
+```{r aes2, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) 
+```
+```{r aes2-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) 
+
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = "daily_vaccinations_raw")) 
+```
+
+### Start building the example visualization
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+```{r example1, exercise = TRUE}
+vac_subset
+```
+```{r example1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) 
+```
+
+## Geometric shapes
+
+### Simple point geom
+```{r geom1, exercise =TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) 
+```
+
+### Aesthetics of points
+```{r geom2, exercise = TRUE}
+df <- tibble(x = factor(0:25), y = 1)
+```
+```{r geom2-solution}
+df <- tibble(x = factor(0:25), y = 1)
+
+### geom_point shapes
+ggplot(df) +
+    geom_point(mapping = aes(x = x, y = y), shape = 0:25, size = 4)
+
+### geom_point colours
+ggplot(df) +
+    geom_point(mapping = aes(x = x, y = y), shape = 0:25, colour = 1:26, fill = "grey", size = 4, stroke = 1)
+```
+
+### Aesthetics of lines
+```{r geom3, exercise = TRUE}
+df <- tibble(x = 0:5, xend = 0:5, y = 0, yend = 10)
+```
+```{r geom3-solution}
+df <- tibble(x = 0:5, xend = 0:5, y = 0, yend = 10)
+
+### geom_line linetypes
+ggplot(df) +
+    geom_segment(mapping = aes(x = x, xend = xend, y = y, yend = yend), size = 3, linetype = 1:6)
+
+### path vs line
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations))
+ggplot(vac_subset) +
+    geom_line(mapping = aes(x = date, y = total_vaccinations))
+```
+
+### Examples of other geoms
+```{r geom4, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, fill = country)) +
+    geom_hline(yintercept = 1e6, linetype = "dashed")
+```
+```{r geom4-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, fill = country)) +
+    geom_hline(yintercept = 1e6, linetype = "dashed")
+
+ggplot(vac_subset) +
+    geom_col(mapping = aes(x = date, y = total_vaccinations, fill = country)) 
+```
+
+### Positional adjustments
+```{r geom5, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_col(mapping = aes(x = date, y = total_vaccinations, fill = country), position = position_stack()) 
+```
+
+```{r geom5-solution}
+ggplot(vac_subset) +
+    geom_col(mapping = aes(x = date, y = total_vaccinations, fill = country), position = position_stack()) 
+
+### dodge bars
+ggplot(vac_subset) +
+    geom_col(mapping = aes(x = date, y = total_vaccinations, fill = country), position = position_dodge()) 
+
+### proportions of full
+ggplot(vac_subset) +
+    geom_col(mapping = aes(x = date, y = total_vaccinations, fill = country), position = position_fill()) 
+
+### jitter
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations), size = 1)
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations), size = 1, position = position_jitter(height = 5e5, width = 0.15), alpha = 0.5)
+```
+
+### Use different data set for geoms
+```{r geom6, exercise = TRUE}
+vac_subset_last <- vac_subset %>%
+    group_by(country) %>%
+    filter(min_rank(desc(date)) == 1)
+vac_subset_last
+```
+```{r geom6-solution}
+vac_subset_last <- vac_subset %>%
+    group_by(country) %>%
+    filter(min_rank(desc(date)) == 1)
+vac_subset_last
+
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations), data = vac_subset_last, size = 3, shape = 17)
+```
+
+### Continue building the example visualization
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+```{r example2, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw))
+```
+```{r example2-solution}
+### plot points only on last vaccination day
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last)
+```
+
+### Short exercise 2
+Plot the rate of people fully vaccinated (variable 'people_fully_vaccinated_per_hundred') against rate of people having received at least one vaccine dose (variable 'people_vaccinated_per_hundred'). Map colour to the country (variable 'country'), and use both points and lines as geoms
+
+```{r geom-ex1, exercise = TRUE}
+vac_subset
+```
+```{r geom-ex1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred, colour = country)) +
+    geom_line(mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred, colour = country))
+```
+
+## Facets
+
+### Simple faceting mapping one variable to panels
+```{r facet1, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_wrap(~country)
+```
+```{r facet1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_wrap(~country)
+
+### panels in grid
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_grid(country ~ .)
+```
+
+### Faceting two or more variables
+```{r facet2, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_grid(country ~ .)
+```
+```{r facet2-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_grid(country ~ .)
+
+### 2 variables in grid
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_grid(country ~ vaccines)
+
+### muliple variables per panel
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    facet_wrap(~country+vaccines)
+```
+
+### Continue building the example visualization
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+```{r example3, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last)
+```
+```{r example3-solution}
+### facet plot by vaccination manufacturers
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last) + 
+    facet_grid(vaccines ~ .)
+```
+
+## Scales
+
+### Colour scales
+
+```{r scale1, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw))
+```
+```{r scale1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw))
+
+### two colour gradient
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) +
+    scale_colour_gradient(low = "blue", high = "red")
+
+### multicolor gradient
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) +
+    scale_colour_gradientn(colours = rainbow(100))
+
+### discrete colour scale
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = country))
+```
+
+### Specialized colour palettes
+
+```{r scale2, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = country)) +
+    scale_color_brewer()
+```
+```{r scale2-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = country)) +
+    scale_color_brewer()
+
+### Color brewer palettes
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = country)) +
+    scale_color_brewer(palette = "Set1")
+
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = country)) +
+    scale_color_brewer(palette = "Spectral")
+
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) +
+    scale_colour_distiller(palette = "Spectral")
+
+### Viridis palettes
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw)) +
+    scale_colour_viridis()
+```
+
+[Color brewer](https://colorbrewer2.org/)  
+[Viridis color palettes](https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html)
+
+
+### Manual scale for discrete variables
+
+```{r scale3, exercise = TRUE}
+shapes <- 21:25
+names(shapes) <- countries
+```
+```{r scale3-solution}
+shapes <- 21:25
+names(shapes) <- countries
+
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    scale_colour_viridis() +
+    scale_shape_manual(values = shapes)
+```
+
+### Adjusting scales
+
+```{r scale4, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    scale_colour_viridis() +
+    scale_shape_manual(values = shapes) +
+    scale_y_continuous(trans = "log10")
+```
+```{r scale4-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    scale_colour_viridis() +
+    scale_shape_manual(values = shapes) +
+    scale_y_continuous(trans = "log10")
+
+### set limits
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    scale_colour_viridis() +
+    scale_shape_manual(values = shapes) +
+    scale_y_continuous(limits = c(0, 1e6))
+
+### custom labels
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country, colour = daily_vaccinations_raw)) +
+    scale_colour_viridis() +
+    scale_shape_manual(values = shapes) +
+    scale_y_continuous(labels = label_number())
+```
+
+### Continue building the example visualization
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+```{r example4, exercise=TRUE}
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last) + 
+    facet_grid(vaccines ~ .)
+```
+```{r example4-solution}
+### add custom scales and labels
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last) + 
+    facet_grid(vaccines ~ .) + 
+    scale_y_continuous(labels = label_comma()) +
+    scale_colour_viridis(labels = label_comma()) +
+    scale_fill_viridis(labels = label_comma()) +
+    scale_shape_manual(values = shapes)
+```
+
+## Annotations
+
+### Add text to plot
+```{r ann1, exercise = TRUE}
+vac_subset_date <- vac_subset %>%
+    filter(date > ymd(20210115), date < ymd(20210120))
+```
+```{r ann1-solution}
+vac_subset_date <- vac_subset %>%
+    filter(date > ymd(20210115), date < ymd(20210120))
+
+### add text 
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations), colour = "grey") +
+    geom_text(mapping = aes(x = date, y = total_vaccinations, label = total_vaccinations), size = 3, data = vac_subset_date)
+
+### avoid overplotting by repelling text 
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations), colour = "grey") +
+    geom_text_repel(mapping = aes(x = date, y = total_vaccinations, label = total_vaccinations), size = 2, min.segment.length = 0, data = vac_subset_date, max.overlaps=Inf)
+
+### label format 
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations), colour = "grey") +
+    geom_label_repel(mapping = aes(x = date, y = total_vaccinations, label = total_vaccinations), size = 2, min.segment.length = 0, data = vac_subset_date, max.overlaps=Inf)
+```
+
+### Continue building the example visualization
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+```{r example5, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last) + 
+    facet_grid(vaccines ~ .) + 
+    scale_y_continuous(labels = label_comma()) +
+    scale_colour_viridis(labels = label_comma()) +
+    scale_fill_viridis(labels = label_comma()) +
+    scale_shape_manual(values = shapes)
+```
+```{r example5-solution}
+### add country label
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last) + 
+    geom_text_repel(aes(x = date, y = total_vaccinations, label = country), size = 2, color = "black", direction = "y", data = vac_subset_last) +
+    facet_grid(vaccines ~ .) + 
+    scale_y_continuous(labels = label_comma()) +
+    scale_colour_viridis(labels = label_comma()) +
+    scale_fill_viridis(labels = label_comma()) +
+    scale_shape_manual(values = shapes)
+```
+
+## Themes and polishing plots
+
+### Examples of pre-built themes
+
+```{r theme1, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_gray()
+```
+```{r theme1-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_gray()
+
+### black & white theme 
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_bw()
+
+### classic theme
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_classic()
+
+### theme without elements
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_void()
+```
+
+### Customize themes
+
+```{r theme2, exercise = TRUE}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+```
+```{r theme2-solution}
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    facet_grid(vaccines ~ .) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+
+### strip text
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    theme_bw() +
+    facet_grid(vaccines ~ .) +
+    theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), strip.background = element_rect(fill = "gainsboro", color = NA), strip.text = element_text(size = 7))
+
+### axis labels
+ggplot(vac_subset) +
+    geom_point(mapping = aes(x = date, y = total_vaccinations)) +
+    theme_bw() +
+    facet_grid(vaccines ~ .) +
+    theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), strip.background = element_rect(fill = "gainsboro", color = NA), strip.text = element_text(size = 7)) +
+    xlab("Date") +
+    ylab("Total vaccinations")
+
+```
+
+### Finalize example visualization
+
+![*COVID19 vaccination rates over time*](https://www.dropbox.com/s/7bxebcgwgpdxax0/plot.png?dl=1){width=80%}
+
+```{r example6, exercise=TRUE}
+### add country label
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last) + 
+    geom_text_repel(aes(x = date, y = total_vaccinations, label = country), size = 2, color = "black", direction = "y", data = vac_subset_last) +
+    facet_grid(vaccines ~ .) + 
+    scale_y_continuous(labels = label_comma()) +
+    scale_colour_viridis(labels = label_comma()) +
+    scale_fill_viridis(labels = label_comma()) +
+    scale_shape_manual(values = shapes)
+```
+
+```{r example6-solution}
+ggplot(vac_subset) +
+    geom_path(mapping = aes(x = date, y = total_vaccinations, colour = daily_vaccinations_raw, group = country), size = 1) + 
+    geom_point(mapping = aes(x = date, y = total_vaccinations, shape = country), size = 2, data = vac_subset_last, show.legend = FALSE) + 
+    geom_text_repel(aes(x = date, y = total_vaccinations, label = country), size = 2, color = "black", direction = "y", data = vac_subset_last) +
+    facet_grid(vaccines ~ .) + 
+    scale_y_continuous(labels = label_comma()) +
+    scale_colour_viridis(labels = label_comma()) +
+    scale_fill_viridis(labels = label_comma()) +
+    scale_shape_manual(values = shapes) + 
+    ylab("Total vaccinations") +
+    theme_bw() +
+    theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), strip.background = element_rect(fill = "gainsboro", color = NA), strip.text = element_text(size = 7))
+```
+
+
+## Exercises
+
+### Exercise 1
+Visualize the relationship between the rate of people vaccinated and the rate of people fully vaccinated. The visualization should include
+
+* Points and lines as geoms 
+* Aesthetic mapping to differentiate countries
+* A dashed line to highlight x=y
+* Fixed ratio coordinate system with equal units
+
+```{r ex1, exercise=TRUE}
+vac_subset
+```
+```{r ex1-hint-1}
+ggplot(vac_subset, mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred)) +
+    geom_point(aes(color = country)) +
+    geom_line(aes(color = country)) 
+```
+```{r ex1-hint-2}
+ggplot(vac_subset, mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred)) +
+    geom_point(aes(color = country)) +
+    geom_line(aes(color = country)) +
+    geom_abline(linetype = "dashed")
+```
+```{r ex1-hint-3}
+ggplot(vac_subset, mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred)) +
+    geom_point(aes(color = country)) +
+    geom_line(aes(color = country)) +
+    geom_abline(linetype = "dashed") + 
+    coord_fixed()
+```
+```{r ex1-solution}
+ggplot(vac_subset, mapping = aes(x = people_vaccinated_per_hundred, y = people_fully_vaccinated_per_hundred)) +
+    geom_point(aes(color = country)) +
+    geom_line(aes(color = country)) +
+    geom_abline(linetype = "dashed") + 
+    coord_fixed()
+```
+
+
+```{r ex1-q1, echo=FALSE}
+question("Which country has the highest vaccination rate?",
+  answer("Israel"),
+  answer("Belgium"),
+  answer("Denmark", correct = TRUE),
+  answer("Norway")
+)
+```
+
+```{r ex1-q2, echo=FALSE}
+question("Which of the following statements is true ",
+  answer("Israel's strategy prioritized first shots over fully vaccinating at the start of the campaign", correct = TRUE),
+  answer("Israel's strategy prioritized fully vaccinating over first shots over at the start of the campaign"),
+  answer("Norway has not yet fully vaccinated all persons that started the vaccination", correct = TRUE)
+)
+```
+
+
+### Exercise 2
+Recreate this visualisation, and note down an observation you learned from it. 
+
+![*Exercise 2*](https://www.dropbox.com/s/grf4aepmrjdj2lg/exercise_plot_1.png?dl=1){width=80%}
+
+```{r ex2, exercise=TRUE}
+vac_subset
+```
+```{r ex2-hint-1}
+# Use the geom `geom_area` to create the stacked ribbons
+```
+```{r ex2-hint-2}
+ggplot(vac_subset, aes(x = date, y = people_fully_vaccinated)) +
+    geom_hline(yintercept = 0) +
+    geom_area(aes(fill = country), colour = "white", size = 0.25)
+```
+```{r ex2-hint-3}
+ggplot(vac_subset, aes(x = date, y = people_fully_vaccinated)) +
+    geom_hline(yintercept = 0) +
+    geom_area(aes(fill = country), colour = "white", size = 0.25) +
+    scale_fill_brewer(name = "Country", palette = "Set1")
+```
+```{r ex2-solution}
+ggplot(vac_subset, aes(x = date, y = people_fully_vaccinated)) +
+    geom_hline(yintercept = 0) +
+    geom_area(aes(fill = country), colour = "white", size = 0.25) +
+    scale_fill_brewer(name = "Country", palette = "Set1") +
+    scale_y_continuous(label = label_comma()) +
+    xlab("Date") +
+    ylab("People fully vaccinated") +
+    theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+```
+
+### Exercise 3 
+Recreate this visualisation, and note down an observation you learned from it. 
+
+![*Exercise 3*](https://www.dropbox.com/s/xg6p4uq1318ty51/exercise_plot_2.png?dl=1){width=80%}
+
+```{r ex3, exercise=TRUE, fig.height = 3.5, fig.width = 5}
+vac_subset
+```
+```{r ex3-hint-1}
+# Use the geom `geom_violin` to create the violin plots
+```
+```{r ex3-hint-2}
+ggplot(vac_subset, mapping = aes(y = country, x = daily_vaccinations_per_million)) +
+    geom_violin(scale = "width", fill = "gainsboro", color = NA)
+```
+```{r ex3-hint-3}
+ggplot(vac_subset, mapping = aes(y = country, x = daily_vaccinations_per_million)) +
+    geom_violin(scale = "width", fill = "gainsboro", color = NA) +
+    geom_point(aes(fill = date), colour = "white", size = 1.5, position = position_jitter(height = 0.25), shape = 21, alpha = 0.9)
+```
+```{r ex3-solution}
+ggplot(vac_subset, mapping = aes(y = country, x = daily_vaccinations_per_million)) +
+    geom_violin(scale = "width", fill = "gainsboro", color = NA) +
+    geom_point(aes(fill = date), colour = "white", size = 1.5, position = position_jitter(height = 0.25), shape = 21, alpha = 0.9) +
+    scale_x_continuous(label = label_comma()) +
+    scale_fill_viridis(name = "Date", option = "B", trans = "date") +
+    xlab("Daily vaccinations per million") +
+    ylab("Country") +
+    theme_classic() +
+    theme(axis.line.y = element_blank(), axis.ticks.y = element_blank())
+```
+
