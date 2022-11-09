@@ -36,7 +36,18 @@ Using unicode as shapes to expand the shapes selection we have:
 - https://jtr13.github.io/cc21fall1/icons-and-symbols-in-r.html
 - https://jrgraphix.net/r/Unicode/25A0-25FF
 
+Color palettes:
+- https://www.datanovia.com/en/blog/top-r-color-palettes-to-know-for-great-data-visualization/
+- https://towardsdatascience.com/generating-color-palettes-in-r-64394117a662
+- https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+- https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html
+- https://tmieno2.github.io/R-as-GIS-for-Economists/color-scale.html
+
 Additional packages that use ggplot and build on top of it:
 
-- ggforce
-- ggrepel
+- ggforce (https://rviews.rstudio.com/2019/09/19/intro-to-ggforce/)
+- ggrepel (https://ggrepel.slowkow.com/articles/examples.html)
+
+Useful geoms:
+
+- geom_path (https://ggplot2.tidyverse.org/reference/geom_path.html)
