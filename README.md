@@ -4,15 +4,15 @@ In this workshop Martin gave some overview on how to create cool plots in ggplot
 
 Here are some general links related to the ggplot and visualizations:
 
-Fundamentals of Data Visualization book:
+**Fundamentals of Data Visualization book:**
 
 https://clauswilke.com/dataviz/
 
-R for Data Science book, chapter about the visualizations:
+**R for Data Science book, chapter about the visualizations:**
 
 https://r4ds.had.co.nz/data-visualisation.html
 
-The ggplot2 cheat cheet pdf link:
+**The ggplot2 cheat cheet pdf link:**
 
 https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf
 
