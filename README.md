@@ -43,11 +43,19 @@ Color palettes:
 - https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html
 - https://tmieno2.github.io/R-as-GIS-for-Economists/color-scale.html
 
+Procrastes analysis - allows you to align PCA coordinates to other coordinates such as geographical (https://en.wikipedia.org/wiki/Procrustes_analysis):
+
+- https://john-quensen.com/tutorials/procrustes-analysis/
+
 Additional packages that use ggplot and build on top of it:
 
 - ggforce (https://rviews.rstudio.com/2019/09/19/intro-to-ggforce/)
 - ggrepel (https://ggrepel.slowkow.com/articles/examples.html)
+- geomtextpath (https://github.com/AllanCameron/geomtextpath)
 
 Useful geoms:
 
 - geom_path (https://ggplot2.tidyverse.org/reference/geom_path.html)
+- geom_segment (https://ggplot2.tidyverse.org/reference/geom_segment.html)
+- geom_mark_hull (https://ggforce.data-imaginist.com/reference/geom_mark_hull.html)
+- theme_* (https://ggplot2.tidyverse.org/reference/ggtheme.html)
