@@ -2,6 +2,20 @@
 
 In this workshop Martin gave some overview on how to create cool plots in ggplot2 and gave also some tips and tricks about how to make them look nicer. 
 
+Here are some general links related to the ggplot and visualizations:
+
+Fundamentals of Data Visualization book:
+
+https://clauswilke.com/dataviz/
+
+R for Data Science book, chapter about the visualizations:
+
+https://r4ds.had.co.nz/data-visualisation.html
+
+The ggplot2 cheat cheet pdf link:
+
+https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf
+
 The workshop has several excersizes built in the learnr package. You can either render it locally and run it from your computer or you can use the shiny version.
 
 The first part is deployed here:
