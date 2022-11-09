@@ -10,6 +10,7 @@ https://marianovosolov.shinyapps.io/03_dataviz/?_ga=2.59032100.82294288.16679134
 
 The reproduction of the Novembre PCA plot is deployed here:
 
+https://globedatasci-ku.github.io/Visualization-workshop-Martin-Sikora/10_analyze_novembre2008_full.html
 
 Some more tips and tricks can be found here:
 
