@@ -29,3 +29,14 @@ https://globedatasci-ku.github.io/Visualization-workshop-Martin-Sikora/10_analyz
 Some more tips and tricks can be found here:
 
 
+## Some more useful links related to what was discussed during the workshop:
+
+Using unicode as shapes to expand the shapes selection we have:
+- https://www.appsloveworld.com/r/100/368/r-ggplot2-shapes-in-unicode
+- https://jtr13.github.io/cc21fall1/icons-and-symbols-in-r.html
+- https://jrgraphix.net/r/Unicode/25A0-25FF
+
+Additional packages that use ggplot and build on top of it:
+
+- ggforce
+- ggrepel
